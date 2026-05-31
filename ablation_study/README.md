@@ -46,30 +46,30 @@ ablation_study/
 
 ```bash
 cd /path/to/iono
-python ablation_study/train_baseline.py
-python ablation_study/train_no_fgl.py
-python ablation_study/train_no_film.py
+uv run python ablation_study/train_baseline.py
+uv run python ablation_study/train_no_fgl.py
+uv run python ablation_study/train_no_film.py
 ```
 
 训练单个模型：
 
 ```bash
-python ablation_study/train_baseline.py
-python ablation_study/train_no_fgl.py
-python ablation_study/train_no_film.py
-# 完整模型使用根目录 train_teacher.py 和 train_student.py
+uv run python ablation_study/train_baseline.py
+uv run python ablation_study/train_no_fgl.py
+uv run python ablation_study/train_no_film.py
+# 完整模型使用根目录 train_teacher.py 和 train_student.py，例如 uv run python train_student.py
 ```
 
 从断点恢复：
 
 ```bash
-python ablation_study/train_no_fgl.py
+uv run python ablation_study/train_no_fgl.py
 ```
 
 ### 2. 评估所有模型
 
 ```bash
-python ablation_study/eval_ablation.py \
+uv run python ablation_study/eval_ablation.py \
   --baseline outputs/ablation/checkpoints/.../best_baseline.pth \
   --no_fgl outputs/ablation/checkpoints/.../best_no_fgl.pth \
   --no_film outputs/ablation/checkpoints/.../best_no_film.pth \
@@ -79,7 +79,7 @@ python ablation_study/eval_ablation.py \
 ### 3. 生成可视化
 
 ```bash
-python ablation_study/visualize_ablation.py --results-file results.pkl
+uv run python ablation_study/visualize_ablation.py --results-file results.pkl
 ```
 
 ## 关键指标

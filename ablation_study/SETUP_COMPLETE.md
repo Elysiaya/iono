@@ -15,8 +15,8 @@ single `train_ablation.py` entrypoint.
 The full model is still trained from the repository root:
 
 ```bash
-python train_teacher.py
-python train_student.py
+uv run python train_teacher.py
+uv run python train_student.py
 ```
 
 ## Default Outputs
@@ -39,13 +39,13 @@ You can override the base output directory with `IONO_OUTPUT_DIR`.
 ## Common Commands
 
 ```bash
-python ablation_study/train_baseline.py
-python ablation_study/train_no_fgl.py
-python ablation_study/train_no_film.py
+uv run python ablation_study/train_baseline.py
+uv run python ablation_study/train_no_fgl.py
+uv run python ablation_study/train_no_film.py
 ```
 
 ```bash
-python ablation_study/eval_ablation.py \
+uv run python ablation_study/eval_ablation.py \
   --baseline outputs/ablation/checkpoints/.../best_baseline.pth \
   --no_fgl outputs/ablation/checkpoints/.../best_no_fgl.pth \
   --no_film outputs/ablation/checkpoints/.../best_no_film.pth \

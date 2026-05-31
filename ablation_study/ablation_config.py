@@ -9,7 +9,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 class AblationConfig:
-    outputs_root = Path(os.getenv("IONO_OUTPUT_DIR", PROJECT_ROOT / "outputs"))
+    outputs_root = PROJECT_ROOT / "outputs"
     """消融实验统一配置"""
     
     # ==================== 数据集路径 ====================

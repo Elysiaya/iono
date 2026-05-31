@@ -4,8 +4,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 class Config:
-    data_dir = Path(os.getenv("IONO_DATA_DIR", PROJECT_ROOT / "data"))
-    outputs_dir = Path(os.getenv("IONO_OUTPUT_DIR", PROJECT_ROOT / "outputs"))
+    data_dir = PROJECT_ROOT / "data"
+    outputs_dir = PROJECT_ROOT / "outputs"
     checkpoints_dir = outputs_dir / "checkpoints"
     logs_dir = outputs_dir / "logs"
     results_dir = outputs_dir / "results"
@@ -13,13 +13,13 @@ class Config:
     # ==================== 数据集路径 ====================
     # 优化 1: 使用列表推导式，代码更紧凑
     hickle_paths = [
-        str(data_dir / "hickle" / f"gim_{year}_hourlyaux.hickle")
+        str(PROJECT_ROOT / "data" / "hickle" / f"gim_{year}_hourlyaux.hickle")
         for year in range(2023, 2026)
     ]
     
     # ==================== 时序序列参数 ====================
     window_size = 72      # 历史输入步长 (3天)
-    future_size = 72      # 特权未来步长 (3天) - 注意: 特权输入比预测步长长，有助于全局上下文
+    future_size = 72      # 特权未来步长 (3天)
     pred_steps = 24       # 预测未来步长 (1天)
     
     # ==================== 模型架构参数 ====================

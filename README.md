@@ -33,15 +33,18 @@ iono/
 ├── iono_model/
 │   ├── IRI.py                    # IRI 经验模型
 │   └── Klobuchar.py              # Klobuchar 经验模型
-├── ablation_study/
+├── ablation_study/               # 消融实验模块
 │   ├── ablation_models.py        # Baseline / NoFGL / NoFiLM 等消融模型
 │   ├── ablation_config.py        # 消融实验配置
-│   ├── train_baseline.py
-│   ├── train_no_fgl.py
-│   ├── train_no_film.py
-│   ├── eval_ablation.py
-│   ├── visualize_ablation.py
-│   └── run_ablation_study.py
+│   ├── train_baseline.py         # Baseline 训练脚本
+│   ├── train_no_fgl.py           # w/o FGL 训练脚本
+│   ├── train_no_film.py          # w/o FiLM 训练脚本
+│   ├── eval_ablation.py          # 评估脚本
+│   ├── visualize_ablation.py     # 可视化脚本
+│   ├── run_ablation_study.py     # 主控脚本
+│   ├── QUICKSTART.py             # 快速使用指南
+│   ├── SETUP_COMPLETE.md         # 设计说明
+│   └── README.md                 # 消融实验专用说明
 ├── scripts/
 │   ├── predict_student_2025.py   # 2025 年学生模型批量预测
 │   ├── inspect_npz.py            # 查看 npz 预测结果
@@ -49,31 +52,26 @@ iono/
 │   └── send_email.py             # 训练完成邮件通知
 ├── train_teacher.py              # Phase 1：训练教师模型
 ├── train_student.py              # Phase 2：训练学生模型
-├── requirements.txt
+├── pyproject.toml                # uv 项目配置及依赖
 └── README.md
 ```
 
 ## 环境安装
 
-建议使用 Python 3.8+，并优先在 CUDA 环境下训练。
+本项目使用 [uv](https://docs.astral.sh/uv/) 作为包管理器。建议使用 Python 3.14+，并优先在 CUDA 环境下训练。
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
-`requirements.txt` 当前包含：
+该命令将自动读取 `pyproject.toml` 安装相关依赖（如 `torch`、`numpy`、`hickle`、`tensorboard` 等），并配置好含 CUDA 13.0 支持的 PyTorch 环境。如果需要进入虚拟环境：
 
-```text
-torch
-numpy
-hickle
-tensorboard
-matplotlib
-pandas
-h5py
+```bash
+uv run python train_teacher.py
+# 或激活虚拟环境：
+# Windows: .venv\Scripts\activate
+# Linux/macOS: source .venv/bin/activate
 ```
-
-如果运行消融实验或数据处理脚本时报缺包，请按报错补充安装 `tqdm` 等运行依赖。
 
 ## 数据准备
 
@@ -156,7 +154,7 @@ hickle_paths = [
 ### 1. 训练教师模型
 
 ```bash
-python train_teacher.py
+uv run python train_teacher.py
 ```
 
 教师模型使用历史窗口、未来 TEC 和未来辅助特征，优化标准 MSE 预测损失。训练过程会：
@@ -184,7 +182,7 @@ outputs/checkpoints/best_teacher.pth
 ### 2. 训练学生模型
 
 ```bash
-python train_student.py
+uv run python train_student.py
 ```
 
 学生模型加载 `Config.teacher_checkpoint`，冻结教师模型，并优化：
@@ -219,7 +217,7 @@ resume_ckpt_student = "outputs/checkpoints/.../student_epochXX_....pth"
 ### 预测 2025 年结果
 
 ```bash
-python scripts/predict_student_2025.py
+uv run python scripts/predict_student_2025.py
 ```
 
 该脚本会：
@@ -243,7 +241,7 @@ times        # 每个样本预测窗口起始时间
 ### 测试教师权重加载
 
 ```bash
-python scripts/test.py
+uv run python scripts/test.py
 ```
 
 该脚本会按 `Config.teacher_checkpoint` 实例化并尝试加载教师模型，适合排查模型结构参数和 checkpoint 是否匹配。
@@ -251,7 +249,7 @@ python scripts/test.py
 ### 查看预测结果
 
 ```bash
-python scripts/inspect_npz.py
+uv run python scripts/inspect_npz.py
 ```
 
 用于快速检查 `npz` 文件中的数组名称、形状和基本内容。
@@ -278,44 +276,26 @@ tensorboard --logdir outputs/ablation/logs
 
 ## 消融实验
 
-消融实验位于 `ablation_study/`，用于比较 FGL 和 FiLM 的贡献。
+消融实验现已重构为独立模块，所有相关脚本及文档均位于 `ablation_study/` 目录中，用于比较 FGL 和 FiLM 两种机制在模型中的贡献。
 
-模型变体：
+请参阅消融实验专属完整文档：[ablation_study/README.md](ablation_study/README.md) 或参考 `ablation_study/QUICKSTART.py` 快速开始。
 
-| 变体 | 脚本 | 说明 |
+核心模型变体：
+
+| 变体 | 训练脚本 | 说明 |
 | --- | --- | --- |
-| `baseline` | `train_baseline.py` | 不使用 FGL，不使用 FiLM |
-| `no_fgl` | `train_no_fgl.py` | 使用 FiLM，不使用 FGL |
-| `no_film` | `train_no_film.py` | 使用 FGL，不使用 FiLM |
-| `full` | 主线 `train_student.py` | 完整学生模型，使用 FGL + FiLM |
+| `baseline` | `ablation_study/train_baseline.py` | 不使用 FGL，不使用 FiLM |
+| `no_fgl` | `ablation_study/train_no_fgl.py` | 使用 FiLM，不使用 FGL |
+| `no_film` | `ablation_study/train_no_film.py` | 使用 FGL，不使用 FiLM |
+| `full` | `train_student.py` | 完整学生模型，使用 FGL + FiLM |
 
-训练三个消融变体：
-
+支持通过主控脚本一键运行流程：
 ```bash
-python ablation_study/train_baseline.py
-python ablation_study/train_no_fgl.py
-python ablation_study/train_no_film.py
+uv run python ablation_study/run_ablation_study.py
 ```
+*(注：完整模型依然通过根目录训练)*
 
-主控脚本可用于串联流程，但当前实现仍保留了旧入口假设：
-
-```bash
-python ablation_study/run_ablation_study.py --phase train
-```
-
-注意：当前仓库没有 `ablation_study/train_full.py`，完整模型训练请使用根目录的 `train_teacher.py` 和 `train_student.py`。`run_ablation_study.py --phase train` 会尝试寻找 `train_full.py`，找不到时会跳过并记录 warning。评估和可视化更推荐直接使用下面的独立脚本。
-
-评估时也可以手动指定各模型 checkpoint：
-
-```bash
-python ablation_study/eval_ablation.py \
-  --baseline outputs/ablation/checkpoints/.../best_baseline.pth \
-  --no_fgl outputs/ablation/checkpoints/.../best_no_fgl.pth \
-  --no_film outputs/ablation/checkpoints/.../best_no_film.pth \
-  --full outputs/checkpoints/best_student.pth
-```
-
-结果和图表默认写入：
+评估结果与图表将默认输出至：
 
 ```text
 outputs/ablation/results/
@@ -343,22 +323,22 @@ outputs/ablation/results/
 
 ```bash
 # 1. 安装依赖
-pip install -r requirements.txt
+uv sync
 
 # 2. 确认 data/hickle/ 下存在 2023-2025 hickle 数据
 
 # 3. 训练教师
-python train_teacher.py
+uv run python train_teacher.py
 
 # 4. 训练学生
-python train_student.py
+uv run python train_student.py
 
 # 5. 预测；默认读取 outputs/checkpoints/best_student.pth
-python scripts/predict_student_2025.py
+uv run python scripts/predict_student_2025.py
 
 # 6. 可选：运行消融实验
-python ablation_study/train_baseline.py
-python ablation_study/train_no_fgl.py
-python ablation_study/train_no_film.py
-python ablation_study/eval_ablation.py
+uv run python ablation_study/train_baseline.py
+uv run python ablation_study/train_no_fgl.py
+uv run python ablation_study/train_no_film.py
+uv run python ablation_study/eval_ablation.py
 ```
