@@ -1,0 +1,82 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.smodel
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# --- Project Specific ---
+
+# Data files
+*.hickle
+gim/
+*.INX
+
+# Logs
+runs/
+logs/
+*.log
+events.out.tfevents.*
+
+# Checkpoints and Models
+checkpoints/
+checkpoints_*/
+*.pth
+*.pt
+auxdata/
+plots_*/
+*.json
+*.h5
+plots/
+result/
+model/
+hickle/
+output/
+outputs/
+data/
+results/
+*.npz
+
+# Ablation experiment artifacts
+ablation_study/ablation_checkpoints/
+ablation_study/checkpoints/
+ablation_study/logs/
+ablation_study/results/
