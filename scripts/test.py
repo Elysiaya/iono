@@ -1,13 +1,6 @@
 import os
-import sys
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
-
-# 将项目根目录加入 sys.path，以便能够导入 iono 模块
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.append(project_root)
 
 from iono.config import Config
 from iono.model_fgl import TeacherForecaster

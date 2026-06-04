@@ -1,11 +1,16 @@
 from datetime import date, datetime, timedelta
 import os
-import sys
+from pathlib import Path
 import hickle as hkl
 import numpy as np
 
-from read_ionex_file import read_ionex_file
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data_pipeline.read_ionex_file import read_ionex_file
+from iono.config import PROJECT_ROOT, Config
+
+
+DEFAULT_IONEX_ROOT = Path(os.getenv("IONO_IONEX_ROOT", PROJECT_ROOT.parent / "gim"))
+
+
 def load_omni_data(filepath, target_year):
     """解析 OMNI2 历史文件提取时间、Kp、Dst 和 F10.7 指数值"""
     times_list, kp_list, dst_list, f107_list = [], [], [], []
@@ -54,12 +59,12 @@ def load_omni_data(filepath, target_year):
         print(f"Loading OMNI data failed: {e}")
         return None, None, None, None
 
-def main(year,output_dir,omni_file):
+def main(year, output_dir, omni_file, ionex_root=None):
     output_file = os.path.join(output_dir, f"gim_{year}_hourlyaux.hickle")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    omni_file = r"data/auxdata/omni2_2DF56gWboA.lst"
+    ionex_root = Path(ionex_root or DEFAULT_IONEX_ROOT)
 
     # 1. 提前加载全部分散的有效历史观测点备用
     omni_times, kp_vals, dst_vals, f107_vals = load_omni_data(omni_file, year)
@@ -73,7 +78,7 @@ def main(year,output_dir,omni_file):
             filename = f"COD0OPSFIN_{year}{doy:03d}0000_01D_01H_GIM.INX"
         else:
             filename = f"codg{doy:03d}0.{str(year)[-2:]}i"
-        filepath = f"C:\\Users\\zx\\Desktop\\毕业论文\\gim\\ionex_{year}\\{filename}"
+        filepath = ionex_root / f"ionex_{year}" / filename
 
         tec_array, times = read_ionex_file(filepath)
             
@@ -130,8 +135,8 @@ def main(year,output_dir,omni_file):
 
 
 if __name__ == "__main__":
-    output_directory = "data/hickle"
-    omni_file_path = r"data/auxdata/omni2_2DF56gWboA.lst"
+    output_directory = Config.data_dir / "hickle"
+    omni_file_path = Config.data_dir / "auxdata" / "omni2_2DF56gWboA.lst"
 
     for target_year in range(2025, 2026):
         main(target_year, output_directory, omni_file_path)

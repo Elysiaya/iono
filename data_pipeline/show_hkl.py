@@ -1,11 +1,12 @@
 
 import hickle as hkl
-import numpy as np
+
+from iono.config import Config
 
 year = 2024
 doy = 365
 
-path = f"data\hickle\gim_{year}_hourlyaux.hickle"
+path = Config.data_dir / "hickle" / f"gim_{year}_hourlyaux.hickle"
 data = hkl.load(path)
 
 d = data['data']

@@ -1,11 +1,11 @@
 import pandas as pd
-import os
+
+from iono.config import Config
 
 def main():
-    # Define paths relative to this script
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    input_file = os.path.join(script_dir, "..", "auxdata", "omni2_c0vmweP_9N.lst")
-    output_file = os.path.join(script_dir, "omni2_c0vmweP_9N.csv")
+    aux_dir = Config.data_dir / "auxdata"
+    input_file = aux_dir / "omni2_c0vmweP_9N.lst"
+    output_file = aux_dir / "omni2_c0vmweP_9N.csv"
 
     # Column names extracted from the .fmt file
     columns = [

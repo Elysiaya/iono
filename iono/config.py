@@ -1,11 +1,13 @@
-import os
 from pathlib import Path
+import os
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DATA_DIR = Path(os.getenv("IONO_DATA_DIR", PROJECT_ROOT / "data"))
+DEFAULT_OUTPUTS_DIR = Path(os.getenv("IONO_OUTPUT_DIR", PROJECT_ROOT / "outputs"))
 
 class Config:
-    data_dir = PROJECT_ROOT / "data"
-    outputs_dir = PROJECT_ROOT / "outputs"
+    data_dir = DEFAULT_DATA_DIR
+    outputs_dir = DEFAULT_OUTPUTS_DIR
     checkpoints_dir = outputs_dir / "checkpoints"
     logs_dir = outputs_dir / "logs"
     results_dir = outputs_dir / "results"
@@ -13,7 +15,7 @@ class Config:
     # ==================== 数据集路径 ====================
     # 优化 1: 使用列表推导式，代码更紧凑
     hickle_paths = [
-        str(PROJECT_ROOT / "data" / "hickle" / f"gim_{year}_hourlyaux.hickle")
+        str(DEFAULT_DATA_DIR / "hickle" / f"gim_{year}_hourlyaux.hickle")
         for year in range(2023, 2026)
     ]
     
@@ -63,6 +65,7 @@ class Config:
     resume_ckpt_student = None  # 训练恢复路径，默认为 None 表示不恢复
     
     # 保证输出目录存在
-    os.makedirs(checkpoints_dir, exist_ok=True)
-    os.makedirs(logs_dir, exist_ok=True)
-    os.makedirs(results_dir, exist_ok=True)
+    @classmethod
+    def ensure_output_dirs(cls):
+        for path in (cls.checkpoints_dir, cls.logs_dir, cls.results_dir):
+            path.mkdir(parents=True, exist_ok=True)

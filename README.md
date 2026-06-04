@@ -22,36 +22,35 @@ iono/
 ├── iono/
 │   ├── config.py                 # 全局配置：数据路径、模型参数、训练参数、checkpoint 路径
 │   ├── dataset_fgl.py            # FGL 数据集，返回历史窗口、未来窗口、预测目标和时间戳
-│   └── model_fgl.py              # TeacherForecaster / StudentForecaster / ConvLSTM / SpatialFiLM
+│   ├── model_fgl.py              # TeacherForecaster / StudentForecaster / ConvLSTM / SpatialFiLM
+│   ├── training.py               # 共享 DataLoader 构建与时间序列切分
+│   ├── train/
+│   │   ├── teacher.py            # Phase 1：训练教师模型
+│   │   └── student.py            # Phase 2：训练学生模型
+│   └── eval/
+│       ├── predict_student_2025.py # 2025 年学生模型批量预测
+│       └── inspect_npz.py        # 查看 npz 预测结果
 ├── data_pipeline/
+│   ├── __init__.py
 │   ├── read_ionex_file.py        # IONEX 文件解析
 │   ├── createhkl.py              # 生成 hickle 数据
 │   ├── createhkl_c1pg.py
+│   ├── download_igs.py           # 下载 IGS IONEX 数据
+│   ├── download_c1pg.py          # 下载 C1PG IONEX 数据
 │   ├── fgl_normalize_transform.py# TEC、辅助特征归一化与空间位置编码
 │   ├── convert_lst_to_csv.py     # OMNI/辅助数据转换
 │   └── check_nulls.py            # 缺失值检查
 ├── iono_model/
 │   ├── IRI.py                    # IRI 经验模型
 │   └── Klobuchar.py              # Klobuchar 经验模型
-├── ablation_study/               # 消融实验模块
-│   ├── ablation_models.py        # Baseline / NoFGL / NoFiLM 等消融模型
-│   ├── ablation_config.py        # 消融实验配置
-│   ├── train_baseline.py         # Baseline 训练脚本
-│   ├── train_no_fgl.py           # w/o FGL 训练脚本
-│   ├── train_no_film.py          # w/o FiLM 训练脚本
-│   ├── eval_ablation.py          # 评估脚本
-│   ├── visualize_ablation.py     # 可视化脚本
-│   ├── run_ablation_study.py     # 主控脚本
-│   ├── QUICKSTART.py             # 快速使用指南
-│   ├── SETUP_COMPLETE.md         # 设计说明
-│   └── README.md                 # 消融实验专用说明
 ├── scripts/
-│   ├── predict_student_2025.py   # 2025 年学生模型批量预测
-│   ├── inspect_npz.py            # 查看 npz 预测结果
+│   ├── predict_student_2025.py   # 兼容入口，转发到 iono.eval
+│   ├── inspect_npz.py            # 兼容入口，转发到 iono.eval
 │   ├── test.py                   # 教师模型加载测试
 │   └── send_email.py             # 训练完成邮件通知
-├── train_teacher.py              # Phase 1：训练教师模型
-├── train_student.py              # Phase 2：训练学生模型
+├── outputs/                      # checkpoint、日志、预测结果（已忽略）
+├── train_teacher.py              # 兼容入口，转发到 iono.train.teacher
+├── train_student.py              # 兼容入口，转发到 iono.train.student
 ├── pyproject.toml                # uv 项目配置及依赖
 └── README.md
 ```
@@ -157,9 +156,15 @@ hickle_paths = [
 uv run python train_teacher.py
 ```
 
+也可以使用包化入口：
+
+```bash
+uv run python -m iono.train.teacher
+```
+
 教师模型使用历史窗口、未来 TEC 和未来辅助特征，优化标准 MSE 预测损失。训练过程会：
 
-- 以 9:1 划分训练集和验证集。
+- 以时间顺序做 9:1 划分，并在训练集和验证集之间留出 `window_size + future_size` 的间隔，避免窗口重叠造成信息泄漏。
 - 使用 AMP 混合精度。
 - 对 decoder 使用 Scheduled Sampling。
 - 保存每轮 checkpoint。
@@ -183,6 +188,12 @@ outputs/checkpoints/best_teacher.pth
 
 ```bash
 uv run python train_student.py
+```
+
+也可以使用包化入口：
+
+```bash
+uv run python -m iono.train.student
 ```
 
 学生模型加载 `Config.teacher_checkpoint`，冻结教师模型，并优化：
@@ -220,6 +231,12 @@ resume_ckpt_student = "outputs/checkpoints/.../student_epochXX_....pth"
 uv run python scripts/predict_student_2025.py
 ```
 
+也可以使用包化入口：
+
+```bash
+uv run python -m iono.eval.predict_student_2025
+```
+
 该脚本会：
 
 - 读取 `data/hickle/gim_2024_hourlyaux.hickle` 和 `data/hickle/gim_2025_hourlyaux.hickle`。
@@ -236,7 +253,7 @@ truths       # (N, 24, 1, 71, 73)，已反归一化为 TECU
 times        # 每个样本预测窗口起始时间
 ```
 
-运行前建议检查并修改脚本中的 `checkpoint_path`，确保指向实际存在的学生模型权重。
+默认 checkpoint 来自 `Config.student_checkpoint`，也可以通过 `--checkpoint` 指向任意学生模型权重。
 
 ### 测试教师权重加载
 
@@ -250,6 +267,13 @@ uv run python scripts/test.py
 
 ```bash
 uv run python scripts/inspect_npz.py
+```
+
+也可以使用包化入口，或直接指定文件：
+
+```bash
+uv run python -m iono.eval.inspect_npz
+uv run python -m iono.eval.inspect_npz outputs/results/student_predictions_2025.npz
 ```
 
 用于快速检查 `npz` 文件中的数组名称、形状和基本内容。
@@ -276,22 +300,23 @@ tensorboard --logdir outputs/ablation/logs
 
 ## 消融实验
 
-消融实验现已重构为独立模块，所有相关脚本及文档均位于 `ablation_study/` 目录中，用于比较 FGL 和 FiLM 两种机制在模型中的贡献。
+消融实验已拆为同级独立项目 `../ablation_study/`，用于比较 FGL 和 FiLM 两种机制在模型中的贡献。
 
-请参阅消融实验专属完整文档：[ablation_study/README.md](ablation_study/README.md) 或参考 `ablation_study/QUICKSTART.py` 快速开始。
+请参阅消融实验项目内的 README 或快速开始脚本。
 
 核心模型变体：
 
 | 变体 | 训练脚本 | 说明 |
 | --- | --- | --- |
-| `baseline` | `ablation_study/train_baseline.py` | 不使用 FGL，不使用 FiLM |
-| `no_fgl` | `ablation_study/train_no_fgl.py` | 使用 FiLM，不使用 FGL |
-| `no_film` | `ablation_study/train_no_film.py` | 使用 FGL，不使用 FiLM |
+| `baseline` | `../ablation_study/train_baseline.py` | 不使用 FGL，不使用 FiLM |
+| `no_fgl` | `../ablation_study/train_no_fgl.py` | 使用 FiLM，不使用 FGL |
+| `no_film` | `../ablation_study/train_no_film.py` | 使用 FGL，不使用 FiLM |
 | `full` | `train_student.py` | 完整学生模型，使用 FGL + FiLM |
 
 支持通过主控脚本一键运行流程：
 ```bash
-uv run python ablation_study/run_ablation_study.py
+cd ../ablation_study
+uv run python run_ablation_study.py
 ```
 *(注：完整模型依然通过根目录训练)*
 
@@ -317,7 +342,6 @@ outputs/ablation/results/
 - `train_teacher.py` 和 `train_student.py` 会调用 `scripts/send_email.py` 发送训练通知。如果没有配置邮件环境，请按需注释相关调用。
 - 若加载 checkpoint 报 shape mismatch，请确认 `Config.in_channels`、`hidden_channels`、`num_layers`、`num_aux=5`、`pred_steps` 与训练该 checkpoint 时完全一致。
 - `torch.amp.autocast('cuda')` 需要 CUDA 环境；如果只在 CPU 上运行，可能需要改为禁用 AMP。
-- 推理脚本中的 `checkpoint_path` 是硬编码示例路径，迁移环境后通常需要手动更新。
 
 ## 推荐运行顺序
 
@@ -337,8 +361,9 @@ uv run python train_student.py
 uv run python scripts/predict_student_2025.py
 
 # 6. 可选：运行消融实验
-uv run python ablation_study/train_baseline.py
-uv run python ablation_study/train_no_fgl.py
-uv run python ablation_study/train_no_film.py
-uv run python ablation_study/eval_ablation.py
+cd ../ablation_study
+uv run python train_baseline.py
+uv run python train_no_fgl.py
+uv run python train_no_film.py
+uv run python eval_ablation.py
 ```

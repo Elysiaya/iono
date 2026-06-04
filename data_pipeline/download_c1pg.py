@@ -5,6 +5,8 @@ import shutil
 import time
 from datetime import datetime, timedelta
 
+from iono.config import Config
+
 def get_ftp_connection(server):
     try:
         ftp = ftplib.FTP_TLS(server, timeout=60)
@@ -15,12 +17,13 @@ def get_ftp_connection(server):
         print(f"重新连接 FTP 失败: {e}")
         return None
 
-def download_ionex_yearly(year, dest_dir="data/ionex"):
+def download_ionex_yearly(year, dest_dir=None):
     """
     下载指定年份一整年的电离层地图文件 (IONEX)
     包括自动解压.gz文件，并删除原.gz压缩文件
     """
     server = 'gdc.cddis.eosdis.nasa.gov'
+    dest_dir = dest_dir or Config.data_dir / "ionex" / f"ionex_{year}_c1pg"
     
     # 确保目标文件夹存在
     if not os.path.exists(dest_dir):
@@ -124,7 +127,7 @@ def download_ionex_yearly(year, dest_dir="data/ionex"):
 if __name__ == "__main__":
     # 指定需要下载的年份及保存目录
     for year in range(2025, 2026):
-        save_directory = os.path.join("C:\\Users\\zx\\Desktop\\毕业论文\\gim", f"ionex_{year}_c1pg")
+        save_directory = Config.data_dir / "ionex" / f"ionex_{year}_c1pg"
         download_ionex_yearly(year, dest_dir=save_directory)
     # target_year = 2023
     # save_directory = os.path.join("C:\\Users\\zx\\Desktop\\毕业论文\\gim", f"ionex_{target_year}")

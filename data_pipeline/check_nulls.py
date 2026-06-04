@@ -1,6 +1,8 @@
 import hickle as hkl
 import numpy as np
 
+from iono.config import Config
+
 def check_null_values(file_path):
     print(f"Loading data from {file_path}...")
     try:
@@ -48,4 +50,4 @@ def check_null_values(file_path):
 
 if __name__ == "__main__":
     for year in range(2016, 2026):
-        check_null_values(f"data/hickle/gim_{year}_hourlyaux.hickle")
+        check_null_values(Config.data_dir / "hickle" / f"gim_{year}_hourlyaux.hickle")

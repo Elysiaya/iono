@@ -165,5 +165,8 @@ def read_ionex_file(filepath):
 
 
 if __name__ == "__main__":
-    tec_array, times = read_ionex_file('gim\\COD0OPSFIN_20240010000_01D_01H_GIM.INX')
+    from iono.config import Config
+
+    sample = Config.data_dir / "ionex" / "COD0OPSFIN_20240010000_01D_01H_GIM.INX"
+    tec_array, times = read_ionex_file(sample)
     print("Shape:", tec_array.shape)  # 应为 (13, 71, 73)
