@@ -42,7 +42,7 @@ def build_dataloaders(hickle_paths, window_size, future_size, pred_steps, batch_
 # ==================== Phase 1: 教师模型训练 ====================
 
 def train_teacher():
-    """Train teacher model: input 72h history + 72h privileged future, output 24h."""
+    """Train teacher model with privileged future TEC, output Config.pred_steps hours."""
     Config.ensure_output_dirs()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -212,7 +212,7 @@ def train_teacher():
         logger.info(f"[Teacher] Epoch [{epoch+1}/{Config.num_epochs}] TF_Ratio: {current_tf_ratio:.2f}")
         logger.info(f"          Train RMSE: {train_rmse:.4f} | Val RMSE: {val_rmse:.4f}")
         step_rmse_str = ", ".join([f"{val:.2f}" for val in step_rmse.tolist()])
-        logger.info(f"          Val Step 1-24: [{step_rmse_str}]")
+        logger.info(f"          Val Step 1-{Config.pred_steps}: [{step_rmse_str}]")
         logger.info(f"          Best Val RMSE: {(best_val_loss ** 0.5) * 100:.4f} | LR: {optimizer.param_groups[0]['lr']:.2e}")
 
         writer.add_scalar('Teacher/train_loss', avg_train, epoch)

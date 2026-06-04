@@ -13,6 +13,8 @@ from iono.model_fgl import StudentForecaster
 from iono.config import Config
 from data_pipeline.fgl_normalize_transform import fgl_normalize_transform
 
+DEFAULT_OUTPUT_NAME = f"student_predictions_2025_{Config.pred_steps}h.npz"
+
 def predict_2025(checkpoint_path=None, save_path=None, data_paths=None):
     Config.ensure_output_dirs()
     # ---- 1. 配置路径与超参数 ----
@@ -26,7 +28,7 @@ def predict_2025(checkpoint_path=None, save_path=None, data_paths=None):
     # 模型检查点路径 (可以根据需要修改成具体的最新路径)
     checkpoint_path = checkpoint_path or Config.student_checkpoint
     
-    save_path = save_path or str(Config.results_dir / "student_predictions_2025.npz")
+    save_path = save_path or str(Config.results_dir / DEFAULT_OUTPUT_NAME)
     save_dir = os.path.dirname(save_path) or "."
     os.makedirs(save_dir, exist_ok=True)
     
@@ -35,7 +37,7 @@ def predict_2025(checkpoint_path=None, save_path=None, data_paths=None):
     full_dataset = IonosphereDatasetFGL(
         data_paths,
         window_size=Config.window_size,
-        future_size=Config.pred_steps,  # [修改] 预测时学生模型其实只需要 24 小时的 aux_future，不需要完整的 72 小时
+        future_size=Config.pred_steps,  # 预测时学生模型只需要预测步长范围内的 aux_future
         pred_steps=Config.pred_steps,
         transform=fgl_normalize_transform,
         return_time=True
@@ -50,7 +52,7 @@ def predict_2025(checkpoint_path=None, save_path=None, data_paths=None):
         if target_time.startswith("2025"):
             target_indices.append(i)
             
-    # 为了避免预测重叠，每天预测一次：以 24小时 为步长提取索引
+    # 为了按天评估，每天预测一次：以 24 小时为采样间隔提取索引
     target_indices = target_indices[::24]
     
     dataset = Subset(full_dataset, target_indices)
@@ -151,7 +153,7 @@ def predict_2025(checkpoint_path=None, save_path=None, data_paths=None):
 def main():
     parser = argparse.ArgumentParser(description="Predict 2025 TEC maps with the trained student model.")
     parser.add_argument("--checkpoint", default=Config.student_checkpoint, help="Path to the student checkpoint.")
-    parser.add_argument("--output", default=str(Config.results_dir / "student_predictions_2025.npz"), help="Output .npz path.")
+    parser.add_argument("--output", default=str(Config.results_dir / DEFAULT_OUTPUT_NAME), help="Output .npz path.")
     parser.add_argument("--data-2024", default=str(Config.data_dir / "hickle" / "gim_2024_hourlyaux.hickle"))
     parser.add_argument("--data-2025", default=str(Config.data_dir / "hickle" / "gim_2025_hourlyaux.hickle"))
     args = parser.parse_args()

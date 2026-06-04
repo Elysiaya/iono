@@ -287,7 +287,7 @@ def train_student():
         val_rmse = (avg_val_pred ** 0.5) * 100.0
         train_rmse = (avg_pred ** 0.5) * 100.0
         
-        # 计算 1-24 小时的单独 RMSE
+        # 计算每个预测步长的单独 RMSE
         step_rmse = torch.sqrt(step_mse / total_samples) * 100.0
         
         student_state = student.module.state_dict() if isinstance(student, nn.DataParallel) else student.state_dict()
@@ -331,9 +331,9 @@ def train_student():
         logger.info(f"          Train RMSE: {train_rmse:.4f} (guide_loss: {avg_guide:.4f})")
         logger.info(f"          Val RMSE: {val_rmse:.4f} (guide_loss: {avg_val_guide:.4f})")
         
-        # [新增] 打印 1-24 小时的预测 RMSE
+        # [新增] 打印每个预测步长的预测 RMSE
         step_rmse_str = ", ".join([f"{val:.2f}" for val in step_rmse.tolist()])
-        logger.info(f"          Val Step 1-24 RMSE: [{step_rmse_str}]")
+        logger.info(f"          Val Step 1-{Config.pred_steps} RMSE: [{step_rmse_str}]")
         
         logger.info(f"          Best Val RMSE: {(best_val_loss ** 0.5) * 100.0:.4f} | LR: {optimizer.param_groups[0]['lr']:.2e}")
 
