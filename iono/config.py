@@ -69,3 +69,54 @@ class Config:
     def ensure_output_dirs(cls):
         for path in (cls.checkpoints_dir, cls.logs_dir, cls.results_dir):
             path.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def training_snapshot(cls):
+        """Return JSON-friendly training settings stored inside checkpoints."""
+        return {
+            "paths": {
+                "data_dir": str(cls.data_dir),
+                "outputs_dir": str(cls.outputs_dir),
+                "checkpoints_dir": str(cls.checkpoints_dir),
+                "logs_dir": str(cls.logs_dir),
+                "results_dir": str(cls.results_dir),
+                "hickle_paths": list(cls.hickle_paths),
+                "teacher_checkpoint": cls.teacher_checkpoint,
+                "student_checkpoint": cls.student_checkpoint,
+            },
+            "sequence": {
+                "window_size": cls.window_size,
+                "future_size": cls.future_size,
+                "pred_steps": cls.pred_steps,
+            },
+            "model": {
+                "in_channels": cls.in_channels,
+                "hidden_channels": cls.hidden_channels,
+                "num_layers": cls.num_layers,
+                "priv_gru_hidden": cls.priv_gru_hidden,
+                "num_aux": 5,
+            },
+            "training": {
+                "batch_size": cls.batch_size,
+                "learning_rate": cls.learning_rate,
+                "num_epochs": cls.num_epochs,
+                "num_workers": cls.num_workers,
+                "pin_memory": cls.pin_memory,
+                "early_stop_patience": cls.early_stop_patience,
+                "lr_decay_factor": cls.lr_decay_factor,
+                "lr_decay_patience": cls.lr_decay_patience,
+            },
+            "fgl": {
+                "lam": cls.lam,
+                "teacher_uses_future_tec": True,
+                "student_uses_future_aux": True,
+                "future_aux_features": ["Kp", "Dst", "F10.7", "doy_sin", "doy_cos"],
+                "note": "Teacher is a privileged model allowed to see target-window future TEC for distillation; its validation RMSE is not a fair deployment metric.",
+            },
+            "scheduled_sampling": {
+                "tf_start_ratio": cls.tf_start_ratio,
+                "tf_end_ratio": cls.tf_end_ratio,
+                "tf_decay_epochs": cls.tf_decay_epochs,
+                "tf_decay_mode": cls.tf_decay_mode,
+            },
+        }

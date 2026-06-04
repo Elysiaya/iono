@@ -184,6 +184,7 @@ def train_teacher():
         # ---- 保存 ----
         checkpoint = {
             'epoch': epoch + 1,
+            'config': Config.training_snapshot(),
             'model_state_dict': model_state,
             'optimizer_state_dict': optimizer.state_dict(),
             'train_loss': avg_train,

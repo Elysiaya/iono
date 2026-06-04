@@ -295,6 +295,7 @@ def train_student():
         # ---- 保存 ----
         checkpoint = {
             'epoch': epoch + 1,
+            'config': Config.training_snapshot(),
             'model_state_dict': student_state,
             'optimizer_state_dict': optimizer.state_dict(),
             'scheduler_state_dict': scheduler.state_dict(),
