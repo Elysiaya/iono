@@ -99,7 +99,7 @@ class Config:
                 "batch_size": cls.batch_size,
                 "learning_rate": cls.learning_rate,
                 "num_epochs": cls.num_epochs,
-                "num_workers": cls.num_workers,
+                "num_workers": 2,
                 "pin_memory": cls.pin_memory,
                 "early_stop_patience": cls.early_stop_patience,
                 "lr_decay_factor": cls.lr_decay_factor,
