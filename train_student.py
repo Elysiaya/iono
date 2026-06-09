@@ -1,4 +1,4 @@
-from iono.train.student import train_student
+from iono.train_student import train_student
 from scripts.send_email import send_email
 
 

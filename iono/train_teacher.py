@@ -26,17 +26,8 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from iono.model_fgl import TeacherForecaster
 from iono.config import Config
-from iono.training import build_temporal_dataloaders
+from iono.dataloader import build_dataloaders
 
-def build_dataloaders(hickle_paths, window_size, future_size, pred_steps, batch_size):
-    return build_temporal_dataloaders(
-        hickle_paths,
-        window_size,
-        future_size,
-        pred_steps,
-        batch_size,
-        logger=logger,
-    )
 
 
 # ==================== Phase 1: 教师模型训练 ====================

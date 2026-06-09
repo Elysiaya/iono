@@ -1,4 +1,4 @@
-from iono.train.teacher import train_teacher
+from iono.train_teacher import train_teacher
 
 
 if __name__ == "__main__":

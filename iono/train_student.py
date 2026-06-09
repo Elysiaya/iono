@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from iono.model_fgl import TeacherForecaster,StudentForecaster
 from iono.config import Config
-from iono.training import build_temporal_dataloaders
+from iono.dataloader import build_dataloaders
 from scripts.send_email import send_email
 import logging
 
@@ -25,15 +25,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def build_dataloaders(hickle_paths, window_size, future_size, pred_steps, batch_size):
-    return build_temporal_dataloaders(
-        hickle_paths,
-        window_size,
-        future_size,
-        pred_steps,
-        batch_size,
-        logger=logger,
-    )
+
 
 # ==================== Phase 2: 学生模型训练（FGL 蒸馏） ====================
 def train_student():
@@ -51,6 +43,7 @@ def train_student():
         Config.future_size,
         Config.pred_steps,
         Config.batch_size,
+        logger=logger,
     )
 
     # ---- 加载冻结教师模型 ----
@@ -142,14 +135,16 @@ def train_student():
         train_total_loss = 0.0
         valid_batches = 0 # [新增] 用于记录有效 batch
 
-        train_pbar = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{Config.num_epochs}] Train")
+        train_pbar = tqdm(train_loader,
+                          desc=f"Epoch [{epoch+1}/{Config.num_epochs}] Train",
+                          total=len(train_loader))
         for batch_idx, (X_hist, aux_hist, X_future, aux_future, y) in enumerate(train_pbar):
-            
             X_hist, aux_hist = X_hist.to(device), aux_hist.to(device)
-            X_future, aux_future = X_future.to(device), aux_future.to(device)
+            X_future = X_future.to(device)
+            aux_future = aux_future.to(device)
             y = y.to(device)
 
-            # Teacher forward (no grad)
+            # Teacher forward (no grad) — 使用完整特权信息
             with torch.no_grad(), torch.amp.autocast('cuda'):
                 pred_T, H_T = teacher(
                     X_hist,
@@ -160,13 +155,13 @@ def train_student():
                     return_hidden=True,
                 )
 
-            # Student forward
+            # Student forward — 仅用学生可见数据（无 X_future）
             optimizer.zero_grad()
             with torch.amp.autocast('cuda'):
                 pred_S, H_S = student(
                     X_hist, 
                     aux_x=aux_hist,
-                    future_aux = aux_future,
+                    future_aux=aux_future,
                     dec_aux=aux_future[:, :Config.pred_steps, :],
                     return_hidden=True,
                     y_true=y, 
@@ -241,10 +236,13 @@ def train_student():
         step_mse = torch.zeros(Config.pred_steps, device=device)
         total_samples = 0
         with torch.no_grad(), torch.amp.autocast('cuda'):
-            val_pbar = tqdm(val_loader, desc=f"Epoch [{epoch+1}/{Config.num_epochs}] Val  ", leave=False)
+            val_pbar = tqdm(val_loader,
+                            desc=f"Epoch [{epoch+1}/{Config.num_epochs}] Val  ",
+                            total=len(val_loader), leave=False)
             for X_hist, aux_hist, X_future, aux_future, y in val_pbar:
                 X_hist, aux_hist = X_hist.to(device), aux_hist.to(device)
-                X_future, aux_future = X_future.to(device), aux_future.to(device)
+                X_future = X_future.to(device)
+                aux_future = aux_future.to(device)
                 y = y.to(device)
                 B = y.size(0)
                 total_samples += B
@@ -261,7 +259,7 @@ def train_student():
                 pred_S, H_S = student(
                     X_hist, 
                     aux_x=aux_hist, 
-                    future_aux = aux_future,
+                    future_aux=aux_future,
                     dec_aux=aux_future[:, :Config.pred_steps, :], 
                     return_hidden=True,
                     tf_ratio=0.0

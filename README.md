@@ -44,13 +44,13 @@ iono/
 │   ├── IRI.py                    # IRI 经验模型
 │   └── Klobuchar.py              # Klobuchar 经验模型
 ├── scripts/
-│   ├── predict_student_2025.py   # 兼容入口，转发到 iono.eval
-│   ├── inspect_npz.py            # 兼容入口，转发到 iono.eval
+│   ├── predict_student_2025.py   # 2025 年 TEC 预测脚本
+│   ├── inspect_npz.py            # NPZ 结果查看脚本
 │   ├── test.py                   # 教师模型加载测试
 │   └── send_email.py             # 训练完成邮件通知
 ├── outputs/                      # checkpoint、日志、预测结果（已忽略）
-├── train_teacher.py              # 兼容入口，转发到 iono.train.teacher
-├── train_student.py              # 兼容入口，转发到 iono.train.student
+├── train_teacher.py              # 兼容入口，转发到 iono.train_teacher
+├── train_student.py              # 兼容入口，转发到 iono.train_student
 ├── pyproject.toml                # uv 项目配置及依赖
 └── README.md
 ```
@@ -159,7 +159,7 @@ uv run python train_teacher.py
 也可以使用包化入口：
 
 ```bash
-uv run python -m iono.train.teacher
+uv run python -m iono.train_teacher
 ```
 
 教师模型使用历史窗口、未来 TEC 和未来辅助特征，优化标准 MSE 预测损失。训练过程会：
@@ -193,7 +193,7 @@ uv run python train_student.py
 也可以使用包化入口：
 
 ```bash
-uv run python -m iono.train.student
+uv run python -m iono.train_student
 ```
 
 学生模型加载 `Config.teacher_checkpoint`，冻结教师模型，并优化：
@@ -231,12 +231,6 @@ resume_ckpt_student = "outputs/checkpoints/.../student_epochXX_....pth"
 uv run python scripts/predict_student_2025.py
 ```
 
-也可以使用包化入口：
-
-```bash
-uv run python -m iono.eval.predict_student_2025
-```
-
 该脚本会：
 
 - 读取 `data/hickle/gim_2024_hourlyaux.hickle` 和 `data/hickle/gim_2025_hourlyaux.hickle`。
@@ -269,11 +263,10 @@ uv run python scripts/test.py
 uv run python scripts/inspect_npz.py
 ```
 
-也可以使用包化入口，或直接指定文件：
+也可以直接指定文件：
 
 ```bash
-uv run python -m iono.eval.inspect_npz
-uv run python -m iono.eval.inspect_npz outputs/results/student_predictions_2025.npz
+uv run python scripts/inspect_npz.py outputs/results/student_predictions_2025.npz
 ```
 
 用于快速检查 `npz` 文件中的数组名称、形状和基本内容。

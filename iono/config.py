@@ -37,8 +37,7 @@ class Config:
     learning_rate = 5e-4
     num_epochs = 50
     
-    # 优化 3: 把 DataLoader 和 Scheduler 的参数收拢到 Config
-    num_workers = 4
+    # DataLoader 和 Scheduler 参数
     pin_memory = True
     early_stop_patience = 10
     lr_decay_factor = 0.5
