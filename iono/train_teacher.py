@@ -19,6 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"  # 减少显存碎片
 import torch
 import torch.nn as nn
 
@@ -75,12 +76,14 @@ def train_teacher():
     patience_counter = 0
 
     # 计算计划采样衰减的周期（例如在前 80% 的 epoch 中将 tf_ratio 逐渐从 1.0 降到 0.0）
-    decay_epochs = max(1, int(Config.num_epochs * 0.8))
+    # decay_epochs = max(1, int(Config.num_epochs * 0.8))
 
     for epoch in range(Config.num_epochs):
         
         # 恢复经典的纯线性衰减，让 Teacher 更加平缓地向自回归过渡
-        current_tf_ratio = max(0.0, 1.0 - (epoch / decay_epochs))
+        # current_tf_ratio = max(0.0, 1.0 - (epoch / decay_epochs))
+
+        current_tf_ratio = 1
 
         # ---- 训练（AMP 混合精度） ----
         teacher.train()
@@ -153,8 +156,9 @@ def train_teacher():
                 B = y.size(0)
                 total_samples += B
 
-                # 验证时不传 y_true 和 tf_ratio，强制模型使用 100% 自回归进行推断
-                pred = teacher(X_hist, aux_x=aux_hist, future_tec=X_future, future_aux=aux_future, dec_aux=aux_future[:, :Config.pred_steps, :])
+                # 验证时保持与训练一致：使用真实标签（教师有未来特权信息）
+                pred = teacher(X_hist, aux_x=aux_hist, future_tec=X_future, future_aux=aux_future,
+                               dec_aux=aux_future[:, :Config.pred_steps, :], y_true=y, tf_ratio=1.0)
                 loss = criterion(pred, y)
                 val_loss += loss.item()
                 

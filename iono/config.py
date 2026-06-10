@@ -33,12 +33,12 @@ class Config:
     priv_gru_hidden = 32  # GRU 处理 aux_future 的隐藏维度
     
     # ==================== 训练控制参数 ====================
-    batch_size = 16       # 如果 OOM，可以减小到 8，并配合 gradient_accumulation_steps=2
+    batch_size = 24       # 16→32 OOM，折中 24（双卡各 12）
     learning_rate = 5e-4
     num_epochs = 50
     
     # DataLoader 和 Scheduler 参数
-    pin_memory = True
+    pin_memory = False  # 根据系统内存情况调整，False 可避免某些环境的 OOM 问题
     early_stop_patience = 10
     lr_decay_factor = 0.5
     lr_decay_patience = 4
